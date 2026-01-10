@@ -59,6 +59,7 @@
       <!-- Orders Table -->
       <el-table :data="orders" v-loading="loading" style="width: 100%">
         <el-table-column prop="orderNumber" label="订单号" width="150" />
+        <el-table-column prop="internalReference" label="内部编号" width="150" />
         <el-table-column label="客户" width="150">
           <template #default="{ row }">
             {{ row.customer?.name || '-' }}
@@ -156,9 +157,16 @@
           <el-row :gutter="20">
             <el-col :span="12">
               <el-form-item label="订单号">
-                <el-input v-model="editForm.orderNumber" disabled />
+                <el-input v-model="editForm.orderNumber" placeholder="请输入订单号" />
               </el-form-item>
             </el-col>
+            <el-col :span="12">
+              <el-form-item label="内部编号">
+                <el-input v-model="editForm.internalReference" placeholder="请输入内部编号" />
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-row :gutter="20">
             <el-col :span="12">
               <el-form-item label="客户">
                 <el-select v-model="editForm.customerId" filterable style="width: 100%">
@@ -171,8 +179,6 @@
                 </el-select>
               </el-form-item>
             </el-col>
-          </el-row>
-          <el-row :gutter="20">
             <el-col :span="12">
               <el-form-item label="订单日期">
                 <el-date-picker
@@ -183,6 +189,8 @@
                 />
               </el-form-item>
             </el-col>
+          </el-row>
+          <el-row :gutter="20">
             <el-col :span="12">
               <el-form-item label="交货日期">
                 <el-date-picker
@@ -202,6 +210,9 @@
         <el-descriptions v-else :column="2" border>
           <el-descriptions-item label="订单号">
             {{ selectedOrder.orderNumber }}
+          </el-descriptions-item>
+          <el-descriptions-item label="内部编号">
+            {{ selectedOrder.internalReference || '-' }}
           </el-descriptions-item>
           <el-descriptions-item label="客户">
             {{ selectedOrder.customer?.name }}
@@ -364,6 +375,39 @@
         </el-button>
       </template>
     </el-dialog>
+
+    <!-- Inbound Quantity Dialog -->
+    <el-dialog v-model="showInboundDialog" title="指定入库数量" width="600px">
+      <el-table :data="inboundItems" border>
+        <el-table-column label="序号" type="index" width="60" align="center" />
+        <el-table-column label="零件名称" prop="partName" width="150" />
+        <el-table-column label="图号/规格" prop="partSpec" width="150" />
+        <el-table-column label="订单数量" prop="quantity" width="100" align="center" />
+        <el-table-column label="已入库" align="center" width="100">
+          <template #default="{ row }">
+            {{ row.inboundQuantity || 0 }}
+          </template>
+        </el-table-column>
+        <el-table-column label="入库数量" align="center" width="150">
+          <template #default="{ row }">
+            <el-input-number
+              v-model="row.quantityToInbound"
+              :min="1"
+              :max="row.quantity - (row.inboundQuantity || 0)"
+              :step="1"
+              size="small"
+              style="width: 100%"
+            />
+          </template>
+        </el-table-column>
+      </el-table>
+      <template #footer>
+        <el-button @click="showInboundDialog = false">取消</el-button>
+        <el-button type="primary" @click="confirmInbound" :loading="inboundLoading">
+          确认入库
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -380,12 +424,14 @@ const inboundLoading = ref(false)
 const updating = ref(false)
 const showDetailDialog = ref(false)
 const showStatusDialog = ref(false)
+const showInboundDialog = ref(false)
 const isEditing = ref(false)
 
 const orders = ref<any[]>([])
 const customers = ref<any[]>([])
 const selectedOrder = ref<any>(null)
 const selectedItems = ref<any[]>([])
+const inboundItems = ref<any[]>([])
 
 const currentPage = ref(1)
 const pageSize = ref(10)
@@ -399,6 +445,7 @@ const searchForm = reactive({
 
 const editForm = reactive({
   orderNumber: '',
+  internalReference: '',
   customerId: null as number | null,
   orderDate: '',
   deliveryDate: '',
@@ -501,6 +548,7 @@ const viewOrder = async (order: any) => {
 
     // Populate edit form
     editForm.orderNumber = response.orderNumber
+    editForm.internalReference = response.internalReference || ''
     editForm.customerId = response.customerId
     editForm.orderDate = response.orderDate
     editForm.deliveryDate = response.deliveryDate
@@ -600,38 +648,46 @@ const checkSelectable = (row: any) => {
   return (row.inboundQuantity || 0) < row.quantity
 }
 
-const handleMoveToInbound = async () => {
+const handleMoveToInbound = () => {
   if (selectedItems.value.length === 0) {
     ElMessage.warning('请选择要入库的项目')
     return
   }
 
-  try {
-    await ElMessageBox.confirm(
-      `确定要将 ${selectedItems.value.length} 个项目标记为入库吗？`,
-      '提示',
-      {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'info',
-      }
-    )
+  // Prepare items with default quantities
+  inboundItems.value = selectedItems.value.map(item => {
+    const remaining = item.quantity - (item.inboundQuantity || 0)
+    return {
+      ...item,
+      quantityToInbound: remaining
+    }
+  })
 
+  showInboundDialog.value = true
+}
+
+const confirmInbound = async () => {
+  try {
     inboundLoading.value = true
     ElMessage.info({
-      message: `正在处理 ${selectedItems.value.length} 个项目，请稍候...`,
+      message: `正在处理 ${inboundItems.value.length} 个项目，请稍候...`,
       duration: 0,
       showClose: true
     })
 
-    // Mark items as inbound
+    // Mark items as inbound with specified quantities
     await warehouseApi.markOrderItemsInbound({
-      orderItemIds: selectedItems.value.map(item => item.id)
+      orderItemIds: inboundItems.value.map(item => item.id),
+      quantities: inboundItems.value.map(item => item.quantityToInbound)
     })
 
     ElMessage.closeAll()
-    ElMessage.success(`已成功将 ${selectedItems.value.length} 个项目标记为入库`)
+    ElMessage.success(`已成功将 ${inboundItems.value.length} 个项目标记为入库`)
+
+    // Close the dialog
+    showInboundDialog.value = false
     selectedItems.value = []
+    inboundItems.value = []
 
     // Refresh the order
     const response = await ordersApi.getOrder(selectedOrder.value.id)
@@ -704,7 +760,9 @@ const saveEdit = async () => {
   updating.value = true
   try {
     const updateData = {
+      orderNumber: editForm.orderNumber,
       customerId: editForm.customerId,
+      internalReference: editForm.internalReference,
       orderDate: editForm.orderDate,
       deliveryDate: editForm.deliveryDate,
       notes: editForm.notes,

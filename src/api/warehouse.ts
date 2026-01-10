@@ -27,6 +27,7 @@ export const warehouseApi = {
   // Mark order items as inbound (simplified flow)
   markOrderItemsInbound(data: {
     orderItemIds: number[]
+    quantities?: number[]
     operator?: string
     referenceNumber?: string
     notes?: string

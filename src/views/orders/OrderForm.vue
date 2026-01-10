@@ -44,6 +44,15 @@
 
         <el-row :gutter="20">
           <el-col :span="12">
+            <el-form-item label="内部编号">
+              <el-input
+                v-model="form.internalReference"
+                placeholder="请输入内部编号"
+                style="width: 100%"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
             <el-form-item label="交货日期" prop="deliveryDate">
               <el-date-picker
                 v-model="form.deliveryDate"
@@ -294,6 +303,7 @@ interface OrderItem {
 
 const form = reactive({
   customerId: null as number | null,
+  internalReference: '',
   orderDate: new Date().toISOString().split('T')[0],
   deliveryDate: '',
   notes: '',
@@ -382,6 +392,7 @@ const handleSubmit = async () => {
       try {
         const orderData = {
           customerId: form.customerId,
+          internalReference: form.internalReference,
           orderDate: form.orderDate,
           deliveryDate: form.deliveryDate,
           totalAmount: totalAmount.value,

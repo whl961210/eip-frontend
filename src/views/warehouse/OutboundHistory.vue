@@ -944,11 +944,11 @@ const printDeliveryNote = () => {
               <td class="dn-field-label">检验结果</td>
               <td class="dn-field-value" style="text-align: center; padding: 0; width: 80px;">
                 <div style="font-weight: bold; padding: 1px; border-bottom: 1px solid #000; font-size: 9px;">合格数</div>
-                <div style="padding: 1px;">${deliveryForm.qualifiedQuantity || ''}</div>
+                <div style="padding: 1px;">${deliveryForm.qualifiedQuantity ?? ''}</div>
               </td>
               <td class="dn-field-value" style="text-align: center; padding: 0; width: 80px;">
                 <div style="font-weight: bold; padding: 1px; border-bottom: 1px solid #000; font-size: 9px;">不合格数</div>
-                <div style="padding: 1px;">${deliveryForm.unqualifiedQuantity || ''}</div>
+                <div style="padding: 1px;">${deliveryForm.unqualifiedQuantity ?? ''}</div>
               </td>
               <td class="dn-field-label" style="font-size: 9px;">检验部门<br/>意见:</td>
               <td class="dn-field-value" colspan="3">${deliveryForm.inspectionComment}</td>
