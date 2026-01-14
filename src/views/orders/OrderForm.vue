@@ -431,10 +431,6 @@ const validateOrderItems = () => {
       ElMessage.error(`请填写第${i + 1}行的零件名称`)
       return false
     }
-    if (!item.partSpec.trim()) {
-      ElMessage.error(`请填写第${i + 1}行的图号/规格`)
-      return false
-    }
     if (item.quantity <= 0) {
       ElMessage.error(`第${i + 1}行的数量必须大于0`)
       return false
