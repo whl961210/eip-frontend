@@ -263,14 +263,47 @@
             </template>
           </el-table-column>
 
-          <el-table-column label="图号/规格" min-width="120">
+          <el-table-column label="图号" width="120">
             <template #default="{ row, $index }">
               <el-input
                 v-if="isEditing"
-                v-model="editForm.orderItems[$index].partSpec"
+                v-model="editForm.orderItems[$index].drawingNumber"
                 size="small"
               />
-              <span v-else>{{ row.partSpec }}</span>
+              <span v-else>{{ row.drawingNumber }}</span>
+            </template>
+          </el-table-column>
+
+          <el-table-column label="规格型号" width="120">
+            <template #default="{ row, $index }">
+              <el-input
+                v-if="isEditing"
+                v-model="editForm.orderItems[$index].specModel"
+                size="small"
+              />
+              <span v-else>{{ row.specModel }}</span>
+            </template>
+          </el-table-column>
+
+          <el-table-column label="材料报告" width="120">
+            <template #default="{ row, $index }">
+              <el-input
+                v-if="isEditing"
+                v-model="editForm.orderItems[$index].materialReport"
+                size="small"
+              />
+              <span v-else>{{ row.materialReport }}</span>
+            </template>
+          </el-table-column>
+
+          <el-table-column label="表面处理" width="120">
+            <template #default="{ row, $index }">
+              <el-input
+                v-if="isEditing"
+                v-model="editForm.orderItems[$index].surfaceTreatment"
+                size="small"
+              />
+              <span v-else>{{ row.surfaceTreatment }}</span>
             </template>
           </el-table-column>
 
@@ -380,8 +413,11 @@
     <el-dialog v-model="showInboundDialog" title="指定入库数量" width="600px">
       <el-table :data="inboundItems" border>
         <el-table-column label="序号" type="index" width="60" align="center" />
-        <el-table-column label="零件名称" prop="partName" width="150" />
-        <el-table-column label="图号/规格" prop="partSpec" width="150" />
+        <el-table-column label="零件名称" prop="partName" width="120" />
+        <el-table-column label="图号" prop="drawingNumber" width="120" />
+        <el-table-column label="规格型号" prop="specModel" width="120" />
+        <el-table-column label="材料报告" prop="materialReport" width="120" />
+        <el-table-column label="表面处理" prop="surfaceTreatment" width="120" />
         <el-table-column label="订单数量" prop="quantity" width="100" align="center" />
         <el-table-column label="已入库" align="center" width="100">
           <template #default="{ row }">
@@ -733,6 +769,10 @@ const startEdit = () => {
     id: item.id,
     partName: item.partName,
     partSpec: item.partSpec,
+    drawingNumber: item.drawingNumber,
+    specModel: item.specModel,
+    materialReport: item.materialReport,
+    surfaceTreatment: item.surfaceTreatment,
     quantity: item.quantity,
     unitPrice: item.unitPrice,
     totalPrice: item.totalPrice,

@@ -76,9 +76,24 @@
                 <el-input v-model="row.partName" placeholder="请输入零件名称" />
               </template>
             </el-table-column>
-            <el-table-column label="图号/规格" width="180">
+            <el-table-column label="图号" width="150">
               <template #default="{ row }">
-                <el-input v-model="row.partSpec" placeholder="请输入图号或规格" />
+                <el-input v-model="row.drawingNumber" placeholder="请输入图号" />
+              </template>
+            </el-table-column>
+            <el-table-column label="规格型号" width="150">
+              <template #default="{ row }">
+                <el-input v-model="row.specModel" placeholder="请输入规格型号" />
+              </template>
+            </el-table-column>
+            <el-table-column label="材料报告" width="150">
+              <template #default="{ row }">
+                <el-input v-model="row.materialReport" placeholder="请输入材料报告" />
+              </template>
+            </el-table-column>
+            <el-table-column label="表面处理" width="150">
+              <template #default="{ row }">
+                <el-input v-model="row.surfaceTreatment" placeholder="请输入表面处理" />
               </template>
             </el-table-column>
             <el-table-column label="数量" width="120">
@@ -193,8 +208,38 @@
               />
             </el-select>
           </el-form-item>
-          <el-form-item label="图号/规格">
-            <el-select v-model="columnMapping.partSpec" placeholder="选择Excel列" clearable>
+          <el-form-item label="图号">
+            <el-select v-model="columnMapping.drawingNumber" placeholder="选择Excel列" clearable>
+              <el-option
+                v-for="col in excelColumns"
+                :key="col"
+                :label="col"
+                :value="col"
+              />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="规格型号">
+            <el-select v-model="columnMapping.specModel" placeholder="选择Excel列" clearable>
+              <el-option
+                v-for="col in excelColumns"
+                :key="col"
+                :label="col"
+                :value="col"
+              />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="材料报告">
+            <el-select v-model="columnMapping.materialReport" placeholder="选择Excel列（可选）" clearable>
+              <el-option
+                v-for="col in excelColumns"
+                :key="col"
+                :label="col"
+                :value="col"
+              />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="表面处理">
+            <el-select v-model="columnMapping.surfaceTreatment" placeholder="选择Excel列（可选）" clearable>
               <el-option
                 v-for="col in excelColumns"
                 :key="col"
@@ -243,11 +288,14 @@
           style="margin-bottom: 10px"
         />
         <el-table v-if="previewData.length > 0" :data="previewData.slice(0, 5)" border>
-          <el-table-column prop="partName" label="零件名称" />
-          <el-table-column prop="partSpec" label="图号/规格" />
+          <el-table-column prop="partName" label="零件名称" width="120" />
+          <el-table-column prop="drawingNumber" label="图号" width="120" />
+          <el-table-column prop="specModel" label="规格型号" width="120" />
+          <el-table-column prop="materialReport" label="材料报告" width="120" />
+          <el-table-column prop="surfaceTreatment" label="表面处理" width="120" />
           <el-table-column prop="quantity" label="数量" width="100" />
           <el-table-column prop="unitPrice" label="单价" width="100" />
-          <el-table-column prop="notes" label="备注" />
+          <el-table-column prop="notes" label="备注" min-width="100" />
         </el-table>
       </div>
 
@@ -287,6 +335,10 @@ const previewData = ref<any[]>([])
 const columnMapping = reactive({
   partName: '',
   partSpec: '',
+  drawingNumber: '',
+  specModel: '',
+  materialReport: '',
+  surfaceTreatment: '',
   quantity: '',
   unitPrice: '',
   notes: '',
@@ -295,6 +347,10 @@ const columnMapping = reactive({
 interface OrderItem {
   partName: string
   partSpec: string
+  drawingNumber: string
+  specModel: string
+  materialReport: string
+  surfaceTreatment: string
   quantity: number
   unitPrice: number
   totalPrice: number
@@ -311,6 +367,10 @@ const form = reactive({
     {
       partName: '',
       partSpec: '',
+      drawingNumber: '',
+      specModel: '',
+      materialReport: '',
+      surfaceTreatment: '',
       quantity: 1,
       unitPrice: 0,
       totalPrice: 0,
@@ -337,6 +397,10 @@ const addItem = () => {
   form.orderItems.push({
     partName: '',
     partSpec: '',
+    drawingNumber: '',
+    specModel: '',
+    materialReport: '',
+    surfaceTreatment: '',
     quantity: 1,
     unitPrice: 0,
     totalPrice: 0,
@@ -400,6 +464,10 @@ const handleSubmit = async () => {
           orderItems: form.orderItems.map((item) => ({
             partName: item.partName,
             partSpec: item.partSpec,
+            drawingNumber: item.drawingNumber,
+            specModel: item.specModel,
+            materialReport: item.materialReport,
+            surfaceTreatment: item.surfaceTreatment,
             quantity: item.quantity,
             unitPrice: item.unitPrice,
             totalPrice: item.totalPrice,
@@ -423,7 +491,6 @@ const handleSubmit = async () => {
 const canImport = computed(() => {
   return (
     columnMapping.partName &&
-    columnMapping.partSpec &&
     columnMapping.quantity &&
     columnMapping.unitPrice &&
     previewData.value.length > 0
@@ -472,8 +539,14 @@ const autoMapColumns = (headers: string[]) => {
     // Auto-map based on common Chinese column names
     if (h.includes('名称') || h === '名称') {
       columnMapping.partName = header
+    } else if (h.includes('图号') || h === '图号') {
+      columnMapping.drawingNumber = header
     } else if (h.includes('规格') || h.includes('型号') || h === '规格型号') {
-      columnMapping.partSpec = header
+      columnMapping.specModel = header
+    } else if (h.includes('材料报告') || h === '材料报告') {
+      columnMapping.materialReport = header
+    } else if (h.includes('表面处理') || h === '表面处理') {
+      columnMapping.surfaceTreatment = header
     } else if (h.includes('数量') || h === '数量') {
       columnMapping.quantity = header
     } else if (h.includes('单价') || h === '单价') {
@@ -485,14 +558,18 @@ const autoMapColumns = (headers: string[]) => {
 }
 
 const updatePreview = () => {
-  if (!columnMapping.partName || !columnMapping.partSpec || !columnMapping.quantity || !columnMapping.unitPrice) {
+  if (!columnMapping.partName || !columnMapping.quantity || !columnMapping.unitPrice) {
     previewData.value = []
     return
   }
 
   const headerRow = excelColumns.value
   const nameIndex = headerRow.indexOf(columnMapping.partName)
-  const specIndex = headerRow.indexOf(columnMapping.partSpec)
+  const specIndex = columnMapping.partSpec ? headerRow.indexOf(columnMapping.partSpec) : -1
+  const drawingNumberIndex = columnMapping.drawingNumber ? headerRow.indexOf(columnMapping.drawingNumber) : -1
+  const specModelIndex = columnMapping.specModel ? headerRow.indexOf(columnMapping.specModel) : -1
+  const materialReportIndex = columnMapping.materialReport ? headerRow.indexOf(columnMapping.materialReport) : -1
+  const surfaceTreatmentIndex = columnMapping.surfaceTreatment ? headerRow.indexOf(columnMapping.surfaceTreatment) : -1
   const qtyIndex = headerRow.indexOf(columnMapping.quantity)
   const priceIndex = headerRow.indexOf(columnMapping.unitPrice)
   const notesIndex = columnMapping.notes ? headerRow.indexOf(columnMapping.notes) : -1
@@ -504,14 +581,18 @@ const updatePreview = () => {
 
       return {
         partName: row[nameIndex] || '',
-        partSpec: row[specIndex] || '',
+        partSpec: specIndex >= 0 ? row[specIndex] || '' : '',
+        drawingNumber: drawingNumberIndex >= 0 ? row[drawingNumberIndex] || '' : '',
+        specModel: specModelIndex >= 0 ? row[specModelIndex] || '' : '',
+        materialReport: materialReportIndex >= 0 ? row[materialReportIndex] || '' : '',
+        surfaceTreatment: surfaceTreatmentIndex >= 0 ? row[surfaceTreatmentIndex] || '' : '',
         quantity,
         unitPrice,
         totalPrice: quantity * unitPrice,
         notes: notesIndex >= 0 ? row[notesIndex] || '' : '',
       }
     })
-    .filter((item: any) => item.partName && item.partSpec)
+    .filter((item: any) => item.partName)
 }
 
 const confirmImport = () => {
@@ -544,6 +625,10 @@ const cancelImport = () => {
   previewData.value = []
   columnMapping.partName = ''
   columnMapping.partSpec = ''
+  columnMapping.drawingNumber = ''
+  columnMapping.specModel = ''
+  columnMapping.materialReport = ''
+  columnMapping.surfaceTreatment = ''
   columnMapping.quantity = ''
   columnMapping.unitPrice = ''
   columnMapping.notes = ''
@@ -557,6 +642,10 @@ watch(
   () => [
     columnMapping.partName,
     columnMapping.partSpec,
+    columnMapping.drawingNumber,
+    columnMapping.specModel,
+    columnMapping.materialReport,
+    columnMapping.surfaceTreatment,
     columnMapping.quantity,
     columnMapping.unitPrice,
     columnMapping.notes,
